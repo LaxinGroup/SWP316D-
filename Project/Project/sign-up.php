@@ -1,5 +1,6 @@
 <?php
-$conn = new mysqli("localhost", "root", "", "smartbus");
+// 1. Better to keep credentials in a separate config file or environment variables
+$conn = new mysqli("localhost", "root", "student", "smartbus");
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -13,14 +14,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    $sql = "INSERT INTO users (fullname, phone, email, password)
-            VALUES ('$fullname', '$phone', '$email', '$hashed_password')";
+    // 2. Use placeholders (?) instead of variables in the SQL string
+    $stmt = $conn->prepare("INSERT INTO users (fullname, phone, email, password) VALUES (?, ?, ?, ?)");
+    
+    // 3. Bind the actual data to the placeholders ("ssss" means 4 strings)
+    $stmt->bind_param("ssss", $fullname, $phone, $email, $hashed_password);
 
-    if ($conn->query($sql) === TRUE) {
+    // 4. Execute the statement
+    if ($stmt->execute()) {
         header("Location: LogInPage.php");
         exit();
     } else {
-        echo "Error: " . $conn->error;
+        echo "Error: " . $stmt->error;
     }
+    $stmt->close();
 }
 ?>
